@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>TAS Enterprise - Orders</title>
+<style>
+  :root {
+    --green: #1a7a3e;
+    --green-dark: #145c30;
+    --bg: #f6f8f6;
+    --card: #ffffff;
+    --text: #1f2b23;
+    --muted: #6b7a70;
+    --border: #e1e8e3;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+  }
+  header {
+    background: var(--green);
+    color: white;
+    padding: 20px 16px;
+  }
+  header h1 { margin: 0; font-size: 20px; }
+  .container { max-width: 720px; margin: 0 auto; padding: 16px; }
+  #login-box {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 24px;
+    margin-top: 40px;
+  }
+  #login-box input {
+    width: 100%;
+    padding: 12px;
+    font-size: 16px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin: 12px 0;
+  }
+  button {
+    background: var(--green);
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-size: 16px;
+    cursor: pointer;
+    width: 100%;
+  }
+  button:hover { background: var(--green-dark); }
+  .order-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    margin-bottom: 12px;
+  }
+  .order-card .top-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 8px;
+  }
+  .order-card .name { font-weight: 600; font-size: 17px; }
+  .order-card .time { font-size: 13px; color: var(--muted); }
+  .order-card .items { margin: 8px 0; font-size: 14px; white-space: pre-line; }
+  .order-card .total { font-weight: 700; color: var(--green-dark); font-size: 16px; }
+  .order-card .contact { font-size: 14px; color: var(--muted); margin-top: 4px; }
+  #status { text-align: center; color: var(--muted); margin: 20px 0; }
+  #refresh-btn { margin-bottom: 16px; }
+</style>
+</head>
+<body>
+<header><h1>TAS Enterprise — Orders</h1></header>
+<div class="container">
+
+  <div id="login-box">
+    <p>Enter password to view orders:</p>
+    <input type="password" id="password-input" placeholder="Password" />
+    <button onclick="login()">View Orders</button>
+  </div>
+
+  <div id="orders-box" style="display:none;">
+    <button id="refresh-btn" onclick="loadOrders()">Refresh</button>
+    <div id="status"></div>
+    <div id="orders-list"></div>
+  </div>
+
+</div>
+
+<script>
+  let savedPassword = '';
+
+  function login() {
+    savedPassword = document.getElementById('password-input').value;
+    document.getElementById('login-box').style.display = 'none';
+    document.getElementById('orders-box').style.display = 'block';
+    loadOrders();
+  }
+
+  async function loadOrders() {
+    const statusEl = document.getElementById('status');
+    const listEl = document.getElementById('orders-list');
+    statusEl.textContent = 'Loading...';
+    listEl.innerHTML = '';
+
+    try {
+      const resp = await fetch('/api/get-orders?password=' + encodeURIComponent(savedPassword));
+      if (resp.status === 401) {
+        statusEl.textContent = 'Incorrect password. Refresh the page to try again.';
+        return;
+      }
+      const data = await resp.json();
+      if (!data.orders || data.orders.length === 0) {
+        statusEl.textContent = 'No orders yet.';
+        return;
+      }
+      statusEl.textContent = '';
+      listEl.innerHTML = data.orders.map(renderOrder).join('');
+    } catch (err) {
+      statusEl.textContent = 'Error loading orders: ' + err.message;
+    }
+  }
+
+  function renderOrder(o) {
+    const itemsText = (o.items || [])
+      .map((it) => `${it.name} x${it.qty}${it.price ? ' ($' + it.price + ')' : ''}`)
+      .join('\n');
+    const date = new Date(o.createdAt).toLocaleString();
+    return `
+      <div class="order-card">
+        <div class="top-row">
+          <span class="name">${escapeHtml(o.customerName)}</span>
+          <span class="time">${date}</span>
+        </div>
+        <div class="items">${escapeHtml(itemsText)}</div>
+        <div class="total">Total: $${o.total}</div>
+        <div class="contact">📞 ${escapeHtml(o.phone || 'N/A')} &nbsp; 📍 ${escapeHtml(o.address || 'N/A')}</div>
+        ${o.notes ? `<div class="contact">📝 ${escapeHtml(o.notes)}</div>` : ''}
+      </div>
+    `;
+  }
+
+  function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+</script>
+</body>
+</html>
