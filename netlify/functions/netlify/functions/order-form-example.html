@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Place an Order - TAS Enterprise</title>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f6f8f6; margin: 0; padding: 16px; }
+  .card { max-width: 480px; margin: 0 auto; background: white; border-radius: 10px; padding: 24px; border: 1px solid #e1e8e3; }
+  h1 { font-size: 20px; color: #145c30; }
+  label { display: block; margin-top: 14px; font-weight: 600; font-size: 14px; }
+  input, textarea { width: 100%; padding: 10px; margin-top: 6px; border: 1px solid #ccc; border-radius: 6px; font-size: 15px; }
+  button { margin-top: 18px; width: 100%; background: #1a7a3e; color: white; border: none; padding: 12px; border-radius: 8px; font-size: 16px; cursor: pointer; }
+  #result { margin-top: 14px; font-size: 14px; }
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>Place Your Order</h1>
+  <form id="order-form">
+    <label>Your Name</label>
+    <input type="text" id="customerName" required />
+
+    <label>Phone Number</label>
+    <input type="tel" id="phone" required />
+
+    <label>Delivery Address</label>
+    <input type="text" id="address" />
+
+    <label>Order (comma-separated for this example — replace with your real product picker)</label>
+    <textarea id="itemsText" rows="3" placeholder="e.g. 1 gal coconut water x2, Coconut oil x1"></textarea>
+
+    <label>Total ($)</label>
+    <input type="number" id="total" step="0.01" required />
+
+    <label>Notes (optional)</label>
+    <textarea id="notes" rows="2"></textarea>
+
+    <button type="submit">Submit Order</button>
+  </form>
+  <div id="result"></div>
+</div>
+
+<script>
+document.getElementById('order-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const resultEl = document.getElementById('result');
+  resultEl.textContent = 'Submitting...';
+
+  const itemsText = document.getElementById('itemsText').value;
+  const items = itemsText.split(',').map((s) => ({ name: s.trim(), qty: 1 })).filter((i) => i.name);
+
+  const order = {
+    customerName: document.getElementById('customerName').value,
+    phone: document.getElementById('phone').value,
+    address: document.getElementById('address').value,
+    items,
+    total: document.getElementById('total').value,
+    notes: document.getElementById('notes').value,
+  };
+
+  try {
+    const resp = await fetch('/api/submit-order', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(order),
+    });
+    const data = await resp.json();
+    if (data.success) {
+      resultEl.textContent = '✅ Order submitted! Order ID: ' + data.orderId;
+      document.getElementById('order-form').reset();
+    } else {
+      resultEl.textContent = '❌ Error: ' + (data.error || 'Unknown error');
+    }
+  } catch (err) {
+    resultEl.textContent = '❌ Error: ' + err.message;
+  }
+});
+</script>
+</body>
+</html>
