@@ -1,0 +1,13 @@
+[build]
+  functions = "netlify/functions"
+  publish = "."
+
+[[redirects]]
+  from = "/api/submit-order"
+  to = "/.netlify/functions/submit-order"
+  status = 200
+
+[[redirects]]
+  from = "/api/get-orders"
+  to = "/.netlify/functions/get-orders"
+  status = 200
