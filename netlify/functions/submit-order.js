@@ -1,4 +1,8 @@
-const { getStore } = require('@netlify/blobs');
+const store = getStore({
+      name: 'orders',
+      siteID: process.env.NETLIFY_SITE_ID,
+      token: process.env.NETLIFY_BLOBS_TOKEN,
+    });
 
 // Environment variables you must set in Netlify (Site settings -> Environment variables):
 // WHATSAPP_TOKEN        - the Meta access token
