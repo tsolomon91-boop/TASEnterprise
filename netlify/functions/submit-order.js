@@ -1,15 +1,3 @@
-const store = getStore({
-      name: 'orders',
-      siteID: process.env.NETLIFY_SITE_ID,
-      token: process.env.NETLIFY_BLOBS_TOKEN,
-    });
-
-// Environment variables you must set in Netlify (Site settings -> Environment variables):
-// WHATSAPP_TOKEN        - the Meta access token
-// WHATSAPP_PHONE_ID     - the Phone Number ID (the number that SENDS the message)
-// WHATSAPP_TO_NUMBER    - your WhatsApp number that should RECEIVE order alerts, in international format e.g. 18765639559
-// ORDERS_PASSWORD       - password used to view the orders page
-
 exports.handler = async (event) => {
   if (event.httpMethod !== 'POST') {
     return { statusCode: 405, body: 'Method Not Allowed' };
